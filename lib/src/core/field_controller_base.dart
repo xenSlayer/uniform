@@ -6,8 +6,10 @@ abstract class _FieldControllerBase<T extends Object> extends ChangeNotifier {
     required this.tag,
     required this.parent,
     this.autoValidate = false,
+    FocusNode? focusNode,
   }) {
     parent._fields[tag] = this;
+    this.focusNode = focusNode ?? FocusNode(debugLabel: '$runtimeType($tag)');
 
     _validators = parent._validators;
   }
@@ -23,6 +25,9 @@ abstract class _FieldControllerBase<T extends Object> extends ChangeNotifier {
   /// Whether this field should be automatically validated.
   final bool autoValidate;
 
+  /// The [FocusNode] of this field.
+  late final FocusNode focusNode;
+
   late Set<InputFieldValidator> _validators;
 
   T? _initialValue;
@@ -32,6 +37,10 @@ abstract class _FieldControllerBase<T extends Object> extends ChangeNotifier {
   InputFieldError _error = InputFieldError.none();
 
   T? get value => _value;
+
+  bool get isRequired {
+    return _validators.contains(const _RequiredInputFieldValidator());
+  }
 
   /// The current error of this field.
   InputFieldError get error => _error;
@@ -93,5 +102,36 @@ abstract class _FieldControllerBase<T extends Object> extends ChangeNotifier {
     _isSubmitted = false;
     _error = InputFieldError.none();
     notifyListeners();
+  }
+
+  ///
+  void requestFocus() {
+    if (focusNode.enclosingScope == null) {
+      assert(
+        () {
+          log(
+            'Tried to request focus on an unattached field. '
+            'Consider adding `controller.focusNode` to the field widget.\n'
+            '┌──────────────────────────────────────────────────────────────┐\n'
+            '│ TextInputFieldBuilder(                                       │\n'
+            '│   builder: (context, controller, textEditingController) {    │\n'
+            '│     return TextFormField(                                    │\n'
+            '│       focusNode: controller.focusNode,    // Add this line   │\n'
+            '│       ...                                                    │\n'
+            '│     );                                                       │\n'
+            '│   }                                                          │\n'
+            '│);                                                            │\n'
+            '└──────────────────────────────────────────────────────────────┘',
+            name: '$runtimeType($tag)',
+          );
+          return true;
+        }(),
+        '',
+      );
+
+      return;
+    }
+
+    focusNode.requestFocus();
   }
 }
