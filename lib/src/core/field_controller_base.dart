@@ -101,6 +101,7 @@ abstract class _FieldControllerBase<T extends Object> extends ChangeNotifier {
     _lastErrorValue = null;
     _isSubmitted = false;
     _error = InputFieldError.none();
+    notifyListeners();
   }
 
   ///
